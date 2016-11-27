@@ -1,0 +1,3 @@
+ertraining/**/out
+*.beam
+tutorial_release_reltool/rel

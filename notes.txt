@@ -1,0 +1,281 @@
+erlang:
+
+== equal, /= not equal
+=:= exact equal, =/= not exact equal
+<, =<, >=, > --> note the = position in =<
+compare different types:
+	number < atom < reference < fun < port < pid < tuple < list < binary 
+compare lists: one by one
+compare tuples: first compare length, then each element
+2#11= 3
+16#a = 10
+$A = 65
+$a = 97
+"string" (really a list)
+'atom'
+
+Op 		Description 							Type 	Priority
++X 		+X 										Number 	1
+-X 		-X 										Number 	1
+X*Y 	X*Y 									Number 	2
+X/Y 	X/Y (ﬂoating-point division) 			Number 	2
+bnot X 	Bitwise not of X 						Integer 2
+X div Y Integer division of X and Y 			Integer 2
+X rem Y Integer remainder of X divided by Y 	Integer 2
+X band Y Bitwise and of X and Y 				Integer 2
+X+Y 	X+Y 									Number 	3
+X-Y 	X-Y 									Number 	3
+X bor Y Bitwise or of X and Y 					Integer 3
+X bxor Y Bitwise xor of X and Y 				Integer 3
+X bsl N Arithmetic bitshift left of X by N bits Integer 3
+X bsr N Bitshift right of X by N bits 			Integer 3
+
+	
+Binaries:
+	<<1,2,3,4>>
+	term_to_binary({a,b,c}). -> use this instead of list_to_binary
+	binary_to_term(<<1,2,3>>).
+	list_to_binary([1,2,3]).
+	binary_to_list(<<1,2,3>>) -> [1,2,3]
+	split_binary(Bin, 16).
+	is_binary(Bin).
+	
+	binary_part(binary(), {start >= 0,length}). % if length negative, start from back.
+	binary_part(binary(), start, length) % same ias prev, can be used in guards.
+	
+	iolist_to_binary(iolistorbinary) -> binary
+	iolist_size(iolistorbinary) -> size that _to_binary would take
+	
+	size(tupleorbinary) -> number of elements or bytes, if is bitstring (number of bits % 8 =/= 0) it rounds down.
+	split_binary(bin,pos) -> {bin, bin}.
+	
+	bit_size(bitstring).
+	byte_size(bitstring).
+	
+	
+	binary = bitstring which is divisible by 8.
+	
+	
+	
+	<< Value:Size/Type >>
+		Value -> Expression
+		Size -> Num bits, default int is 8 and float is 64
+		Type -> specifiers separated by '-' can be any of:
+			type: integer, float, binary, byte, bits, bitstring
+			sign: signed, unsinged (default), if signed first bit is sign (0 = +)
+			endian: big(default), little, native
+			unit: ? unit:X where X is size of value (a unit):
+					bits and bitstring -> 1
+					binary and bytes -> 8
+	
+	<<5:4, 5:4 >> = "U" because it is 2#01010101
+	
+	<<A:4,B:4,C/binary>> = Bin.
+	C -> gets the rest of it
+	%%% IT CAN PATTERN MATCH WITH PREVIOUS MATCHES WITHIN SAME MATCH %%%
+	F = <<1,3,0,0,1,0,0,0>>.
+	<<Type,Size,Bin:Size/binary-unit:8, _/binary>> = F.
+	Type = 1.
+	Size = 3.
+	Bin = <<0,0,1>>.
+	
+	%% notes
+	<<X:7/binary,Y:1/binary>> -> won't mach, "binary" must be multiple of 8,
+		if it was bitstring would work.
+	
+	%%% bitstring comprehensions
+	
+	<< <<bnot(X):1>> || <<X:1>> <= <<42:6>> >>. -> will flip each bit.
+	
+References:
+	bif: make_ref() -> almost unique, repeats every 2^82, only unique in a node
+	
+	
+guard expressions:
+	func(X) when X < 3, X > 5 -> in this case ',' is and
+	func(X) when X<3; X>5 -> in this case ';' is or, can put several and between ors
+
+%%% MODULES	
+-module(name)
+-export([funlist/Arity])
+-import(Module, [Fun/Arity])
+-author(Name)
+-date(Date)
+-behaviour(B)
+-record(Name, Fields)
+-vsn(Version) (this set automatically to module's md5)
+-on_load(Function) -> call this when module is loaded.
+
+
+get these calling
+	Mod:module_info/0
+	Mod:module_info/1
+	on shell: m(Module)
+%%% MODULES END
+
+
+type conversion:
+	atom_to_list/1, 
+	tuple_to_list/1
+	float(Int),
+	float_to_list/1, integer_to_list/1
+	round/1, trunc/1 -> all returns integer
+
+function call:
+	apply(Module, Function, Arguments) where Arguments is a list.
+	Module:Function(Arg1, Arg2) -> this is the same, but known arguments.
+
+try catch:
+	try Expression of
+		Pattern1 [when Guard1] -> Body1;
+	catch
+		[Class1:]ExceptionPattern1 [when ExGuard1] -> ExBody1;
+	end
+	
+	error classes:
+		- error -> could be raised by erlang:error(Term)
+		- throw -> used throw(Something)
+		- exit  -> used exit/1
+	
+	(older method)
+	catch Expression.
+		if Expression is ok, will return its value
+		if Expression has error, will return {'EXIT', Error}
+	
+	
+other bifs:
+	{Year, Month, Day} = date().
+	{Hour, Minute, Second} = time().
+	{MegaSeconds, Seconds, MicroSeconds} = now(). -> this call always gives different values
+	
+io,file modules:
+	io:get_lie(Prompt) -> String
+	io:get_chars(Prompt,Count) -> String
+	io:read(Prompt) -> {ok,Term}.
+
+	io:write(Term)
+	io:format(Format,List)
+		~c = ascii char
+		~f = float up to 6 decimal places
+		~e = float with scientific notation
+		~w = term in "standard syntax"
+		~p = pretty print ~w
+		~W,~P = same as ~w and ~p but extra parameter to limit depth (default 3 in ~w and ~p)
+		~B = integer base 10
+		~n = new line
+		
+		Full Format:
+		~F.P.PadC
+			F = field width
+			P = precision
+			Pad = padding character
+			C = control char
+			
+			
+			
+interesting modules
+	array: ---
+	calendar: ---
+	dict: key/value dictionary
+	erlang: bifs
+	file: filesystem
+	filename: ---
+	io: ---
+	lists: ---
+	math: ---
+	queue: FIFO queues
+	random: ---
+	string: some string utils
+	timer: ---
+	
+DEBUGGING:
+	debugger:start() -> will launch the graphical debugger.
+	# erlc +debug_info module.erl -> will compile file with debugging information
+	from shell: "c(Module, [debug_info])."
+	
+	pman:start().
+
+SHELL:
+	b() -> show bindings
+	f() -> unbind all
+	f(B) -> unbind B
+	c(M) -> compile M module
+	l(M) -> load M module
+	i() -> some system info
+	regs() -> show registered processes
+	
+	
+	%% Compile options:
+	'P' -> Preprocess only
+	'E' -> Preprocess and convert records
+	{d,flag} -> define flag
+	{u,flag} -> undefine flag
+	{i,Dir} -> add dir to include path
+	
+	compile:file(someFile, ['E'])
+	c(module, ['E']) -> generate module.E -> preprocceses?
+
+	code:add_patha(Path).
+	code:get_path().
+	
+	erl -pa Path || erl -pz Path
+	pa = add path at beginning
+	pz = add path at end.
+	
+	erl -mode embedded || interactive
+	
+	code:purge(Module).
+	code:soft_purge(Module). -> if any process using it, return false.
+	
+--- Processes
+
+	Pid = spawn(Module, Function, [Parameters]).
+	register( name_atom, Pid).
+	Pid = whereis(name_atom).
+	whereis(non_working_or_non_registered_process) -> undefined.
+	in shell: regs() -> show list of registered processes.
+	link(Pid) -> link the other process to this.
+	unlink(Pid)
+	spawn_link(Mod,Fun,Args) -> spawn and link in one.
+	spawn_monitor(Mod,Fun,Args)
+	
+	process_flag(priority, Priority) where Priority in [high, normal, low]. (do not use).
+	
+	process_flag(trap_exit, true) when a linked process die, sent message:
+		{'EXIT', Pid, Reason}
+	
+	erlang:monitor(process, Pid) -> Reference;
+		where Pid is pid or registered name
+		- It sends { 'DOWN', Reference, process, Pid, Reason }
+			See references later
+		- If the process didn't exist will send it with reason noproc
+
+	erlang:demonitor(Reference) -> cancels it, do not forget to flush messages
+		you could have one from before, or could use:
+		erlang:demonitor(Reference, [flush]) -> also removes 'DOWN' messages
+
+	exit(Reason) -> terminates the process with some reason
+		if used in try...catch or catch, will be catched.
+		{ 'EXIT', Pid, Reason }
+
+	exit(Pid, Reason) -> will send the exit signal to a specific process. BUT
+		IMPORTANT: the Pid in { 'EXIT', Pid, Reason} is the receiving one,
+		NOT THE SENDING ONE.
+	
+		exit signal sent to a process cannot be caught with a catch
+	
+	Reason | Trapping                          | Non Trapping
+	normal | {'EXIT',Pid,normal}               | Nothing happens
+	kill   | exit and send {'EXIT',Pid,killed} | terminates, reason killed
+	Other  | {'EXIT',Pid,Other}                | terminates, reason Other
+	
+	
+---------------
+timer:tc((fun Fun(0) -> ok; Fun(N) -> {{Year,Month,Day},{Hour,Minute,Second}} = calendar:local_time(), Res = lists:concat([Year,$-,Month,$-,Day,32,Hour,$:,Minute,$:,Second]), Fun(N-1) end), [100000]).
+
+
+
+(fun() -> {{Year,Month,Day},{Hour,Minute,Second}} = calendar:local_time(), Res = lists:concat([Year,"-",Month,"-",Day," ",Hour,":",Minute,":",Second]) end)().
+
+
+(fun() -> {{Year,Month,Day},{Hour,Minute,Second}} = calendar:local_time(), io_lib:format("~B-~B-~B ~B:~B:~B~n",[Year,Month,Day,Hour,Minute,Second]) end)().
